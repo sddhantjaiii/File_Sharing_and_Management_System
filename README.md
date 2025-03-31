@@ -1,5 +1,11 @@
 # File Sharing & Management System
 
+## About the Developer
+
+Hi, I'm **Siddhant Jaiswal**, a B.Tech Computer Science student at VIT Bhopal University, graduating in May 2026. I specialize in backend development, scalable systems, and cloud computing. I've led projects that increased customer retention by 40% and reduced administrative workload by 35%. I'm passionate about building efficient and scalable applications, and this project is a demonstration of my backend development skills.
+
+## Project Overview
+
 A full-stack file sharing and management system built with Go, PostgreSQL, Redis, and React.
 
 ## Features
@@ -118,7 +124,7 @@ project-root/
 │   │   ├── utils/
 │   │   │   ├── jwt.go
 │   │   │   ├── redis.go
-│   │   ├── uploads/
+│   ├── uploads/
 │── frontend/
 │   ├── src/
 │   │   ├── components/
@@ -138,4 +144,5 @@ project-root/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
