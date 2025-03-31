@@ -48,4 +48,4 @@ func StartCleanupJob(db *gorm.DB) {
 			time.Sleep(time.Hour)
 		}
 	}()
-} 
+}

@@ -3,6 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+declare global {
+  interface Window {
+    env: {
+      REACT_APP_API_URL?: string;
+    };
+  }
+}
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -20,13 +30,28 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8080/auth/login', formData);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      toast.success('Login successful!');
-      navigate('/dashboard');
+      const response = await axios.post(`${API_URL}/auth/login`, formData);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        toast.success('Login successful!');
+        navigate('/dashboard');
+      } else {
+        toast.error('Invalid response from server');
+      }
     } catch (error) {
-      toast.error('Invalid credentials');
+      console.error('Login error:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          toast.error('Invalid credentials');
+        } else if (error.response?.data?.error) {
+          toast.error(error.response.data.error);
+        } else {
+          toast.error('Failed to login');
+        }
+      } else {
+        toast.error('An unexpected error occurred');
+      }
     }
   };
 

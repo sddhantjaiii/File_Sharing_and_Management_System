@@ -10,4 +10,4 @@ type User struct {
 	Email    string `gorm:"uniqueIndex;not null" json:"email"`
 	Password string `gorm:"not null" json:"-"`
 	Files    []File `gorm:"foreignKey:UserID" json:"files,omitempty"`
-} 
+}

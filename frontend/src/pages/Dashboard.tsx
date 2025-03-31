@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
+import { AxiosError } from 'axios';
 
 interface File {
   ID: number;
@@ -15,6 +17,10 @@ interface File {
   share_url?: string;
 }
 
+interface ApiError {
+  error: string;
+}
+
 declare global {
   interface Window {
     env: {
@@ -26,25 +32,38 @@ declare global {
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [files, setFiles] = useState<File[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const token = localStorage.getItem('token');
 
+  useEffect(() => {
+    if (!token) {
+      navigate('/login');
+    }
+  }, [token, navigate]);
+
   const fetchFiles = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/files`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get('/api/files');
       if (response.data.files) {
         setFiles(response.data.files);
       }
     } catch (error) {
       console.error('Error fetching files:', error);
-      toast.error('Failed to fetch files');
+      const axiosError = error as AxiosError<ApiError>;
+      if (axiosError.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        navigate('/login');
+      } else if (axiosError.response?.data?.error) {
+        toast.error(axiosError.response.data.error);
+      } else {
+        toast.error('Failed to fetch files');
+      }
     }
   };
 
-  const memoizedFetchFiles = useCallback(fetchFiles, [token]);
+  const memoizedFetchFiles = useCallback(fetchFiles, [token, navigate]);
 
   useEffect(() => {
     if (token) {
@@ -65,10 +84,9 @@ const Dashboard = () => {
     formData.append('file', file);
 
     try {
-      console.log('Uploading file to:', `${API_URL}/api/files/upload`);
-      const response = await axios.post(`${API_URL}/api/files/upload`, formData, {
+      console.log('Uploading file to:', '/api/files/upload');
+      const response = await api.post('/api/files/upload', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
         onUploadProgress: (progressEvent) => {
@@ -80,23 +98,22 @@ const Dashboard = () => {
       if (response.data.file) {
         setFiles(prevFiles => [...prevFiles, response.data.file]);
         toast.success('File uploaded successfully', { id: 'upload-progress' });
-        // Refresh the file list after successful upload
         memoizedFetchFiles();
       } else {
         toast.error('Invalid response from server', { id: 'upload-progress' });
       }
     } catch (error) {
       console.error('Error uploading file:', error);
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 413) {
-          toast.error('File size exceeds server limit', { id: 'upload-progress' });
-        } else if (error.response?.data?.error) {
-          toast.error(error.response.data.error, { id: 'upload-progress' });
-        } else {
-          toast.error('Failed to upload file', { id: 'upload-progress' });
-        }
+      const axiosError = error as AxiosError<ApiError>;
+      if (axiosError.response?.status === 401) {
+        toast.error('Session expired. Please login again.', { id: 'upload-progress' });
+        navigate('/login');
+      } else if (axiosError.response?.status === 413) {
+        toast.error('File size exceeds server limit', { id: 'upload-progress' });
+      } else if (axiosError.response?.data?.error) {
+        toast.error(axiosError.response.data.error, { id: 'upload-progress' });
       } else {
-        toast.error('An unexpected error occurred', { id: 'upload-progress' });
+        toast.error('Failed to upload file', { id: 'upload-progress' });
       }
     }
   };
@@ -110,16 +127,11 @@ const Dashboard = () => {
 
     try {
       console.log('Attempting to delete file:', fileId);
-      const response = await axios.delete(`${API_URL}/api/files/${fileId}`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.delete(`/api/files/${fileId}`);
       
       if (response.status === 200) {
         setFiles(prevFiles => prevFiles.filter(file => file.ID !== fileId));
         toast.success('File deleted successfully');
-        // Refresh the file list after successful deletion
         memoizedFetchFiles();
       }
     } catch (error) {
@@ -137,11 +149,7 @@ const Dashboard = () => {
 
     try {
       console.log('Attempting to share file:', fileId);
-      const response = await axios.get(`${API_URL}/api/files/share/${fileId}`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get(`/api/files/share/${fileId}`);
       
       const { share_url: shareUrl, file: updatedFile } = response.data;
       if (!shareUrl) {
@@ -165,9 +173,7 @@ const Dashboard = () => {
 
   const handleSearch = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/files/search?query=${searchQuery}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(`/api/files/search?query=${searchQuery}`);
       setFiles(response.data.files);
     } catch (error) {
       toast.error('Failed to search files');

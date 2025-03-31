@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"filesharing/jobs"
 	"filesharing/middleware"
@@ -11,11 +12,11 @@ import (
 	"filesharing/routes"
 	"filesharing/utils"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"github.com/gin-contrib/cors"
 )
 
 func initDB() (*gorm.DB, error) {
@@ -68,10 +69,11 @@ func main() {
 
 	// CORS configuration
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000", "http://frontend:3000"}
+	config.AllowOrigins = []string{"http://localhost:3000"} // Specific origin instead of wildcard
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept"}
 	config.AllowCredentials = true
+	config.MaxAge = 12 * time.Hour
 
 	// CORS middleware
 	r.Use(cors.New(config))
@@ -129,4 +131,4 @@ func initializeRoutes(r *gin.Engine, db *gorm.DB) {
 			files.DELETE("/:file_id", routes.DeleteFile(db))
 		}
 	}
-} 
+}

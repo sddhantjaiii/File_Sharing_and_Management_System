@@ -18,4 +18,4 @@ type File struct {
 	IsPublic     bool      `gorm:"default:false" json:"is_public"`
 	ShareToken   string    `gorm:"uniqueIndex" json:"-"`
 	CreatedAt    time.Time `json:"created_at"`
-} 
+}

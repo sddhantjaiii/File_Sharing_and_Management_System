@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -34,24 +33,16 @@ func InitRedis() error {
 	return err
 }
 
-func SetCache(key string, value interface{}, expiration time.Duration) error {
+// GetCache retrieves a string value from Redis cache
+func GetCache(key string) (string, error) {
 	ctx := context.Background()
-	jsonValue, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-
-	return redisClient.Set(ctx, key, jsonValue, expiration).Err()
+	return redisClient.Get(ctx, key).Result()
 }
 
-func GetCache(key string, value interface{}) error {
+// SetCache sets a string value in Redis cache with expiration
+func SetCache(key string, value string, expiration time.Duration) error {
 	ctx := context.Background()
-	jsonValue, err := redisClient.Get(ctx, key).Result()
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal([]byte(jsonValue), value)
+	return redisClient.Set(ctx, key, value, expiration).Err()
 }
 
 func DeleteCache(key string) error {
@@ -72,4 +63,4 @@ func ClearUserCache(userID uint) error {
 	}
 
 	return iter.Err()
-} 
+}

@@ -96,4 +96,4 @@ func Login(db *gorm.DB) gin.HandlerFunc {
 			},
 		})
 	}
-} 
+}
